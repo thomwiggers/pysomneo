@@ -61,6 +61,10 @@ class Somneo(object):
 
         return device_info
 
+    def _refresh_session(self):
+        self._session.close()
+        self._session = requests.Session()
+
     def _internal_call(self, method, url, headers, payload):
         """Call to the API."""
         args = dict()
@@ -77,11 +81,13 @@ class Somneo(object):
                 r = self._session.request(method, url, verify=False, timeout=20, **args)
             except requests.Timeout:
                 _LOGGER.error('Connection to Somneo timed out.')
+                self._refresh_session()
                 raise
             except requests.ConnectionError:
                 continue
             except requests.RequestException:
                 _LOGGER.error('Error connecting to Somneo.')
+                self._refresh_session()
                 raise
             else:
                 if r.status_code == 422:
