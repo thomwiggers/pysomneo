@@ -32,7 +32,6 @@ class Somneo(object):
         urllib3.disable_warnings()
         self.host = host
         self._base_url = 'https://' + host + '/di/v1/products/1/'
-        self._session = requests.Session()
 
         self.light_data = None
         self.sensor_data = None
@@ -42,7 +41,7 @@ class Somneo(object):
     def get_device_info(self):
         """ Get Device information """
         try:
-            response = self._session.request('GET', 'https://' + self.host + '/upnp/description.xml', verify=False,
+            response = requests.request('GET', 'https://' + self.host + '/upnp/description.xml', verify=False,
                                              timeout=20)
         except requests.Timeout:
             _LOGGER.error('Connection to Somneo timed out.')
@@ -61,10 +60,6 @@ class Somneo(object):
 
         return device_info
 
-    def _refresh_session(self):
-        self._session.close()
-        self._session = requests.Session()
-
     def _internal_call(self, method, url, headers, payload):
         """Call to the API."""
         args = dict()
@@ -78,16 +73,14 @@ class Somneo(object):
 
         while True:
             try:
-                r = self._session.request(method, url, verify=False, timeout=20, **args)
+                r = requests.request(method, url, verify=False, timeout=(5, 20), **args)
             except requests.Timeout:
                 _LOGGER.error('Connection to Somneo timed out.')
-                self._refresh_session()
                 raise
             except requests.ConnectionError:
                 continue
             except requests.RequestException:
                 _LOGGER.error('Error connecting to Somneo.')
-                self._refresh_session()
                 raise
             else:
                 if r.status_code == 422:
